@@ -79,10 +79,20 @@
     display: flex;
     align-items: center;
     justify-content: center;
+    overflow: hidden;
     font-size: clamp(28px, 6vh, 40px);
     margin: 0 auto 0;
     box-shadow: 0 0 30px #FFDF0044, 0 4px 24px #00000088;
     animation: pulsar 3s ease-in-out infinite;
+  }
+
+  .logo-circulo img,
+  .avatar-header img,
+  .msg-avatar img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
   }
 
   @keyframes pulsar {
@@ -527,7 +537,9 @@
 <!-- ═══ TELA DE BOAS-VINDAS ═══ -->
 <div id="tela-boas-vindas">
   <div class="logo-container">
-    <div class="logo-circulo">🦅</div>
+    <div class="logo-circulo">
+      <img src="avatar.png?v=3" alt="Debatedor" decoding="async">
+    </div>
     <div class="badge-online"></div>
   </div>
 
@@ -564,7 +576,7 @@
 
   <div class="chat-header">
     <div class="avatar-header">
-      🦅
+      <img src="avatar.png?v=3" alt="" decoding="async">
       <div class="avatar-dot"></div>
     </div>
     <div class="header-info">
@@ -589,7 +601,9 @@
   </div>
 
   <div class="typing-indicator" id="typing">
-    <div class="msg-avatar bot-av">🦅</div>
+    <div class="msg-avatar bot-av">
+      <img src="avatar.png?v=3" alt="" decoding="async">
+    </div>
     <div class="typing-dots">
       <span></span><span></span><span></span>
     </div>
@@ -729,7 +743,11 @@ function adicionarMensagem(tipo, texto) {
   var avatar = document.createElement('div');
   avatar.className = 'msg-avatar ' + (tipo === 'bot' ? 'bot-av' : 'user-av');
   if (tipo === 'bot') {
-    avatar.textContent = '🦅';
+    var img = document.createElement('img');
+    img.src = 'avatar.png?v=3';
+    img.alt = '';
+    img.decoding = 'async';
+    avatar.appendChild(img);
   } else {
     avatar.textContent = inicialUsuario;
   }
