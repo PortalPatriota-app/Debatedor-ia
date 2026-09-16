@@ -3,9 +3,12 @@
 <head>
 <meta charset="UTF-8">
 <meta http-equiv="X-UA-Compatible" content="IE=edge">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, viewport-fit=cover">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
 <meta name="format-detection" content="telephone=no">
 <meta name="theme-color" content="#111111">
+<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+<meta http-equiv="Pragma" content="no-cache">
+<meta http-equiv="Expires" content="0">
 <title>Debatedor IA</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -21,26 +24,32 @@
     --cinza-medio: #1e1e1e;
     --cinza-claro: #2a2a2a;
     --borda: #333;
-    --app-h: 100vh;
   }
 
   * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
 
-  html, body { height: 100%; }
+  html, body {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    width: 100%;
+    height: 100%;
+    overflow: hidden;
+    overscroll-behavior: none;
+  }
 
   body {
     background: var(--cinza-escuro);
     color: var(--branco);
     font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
     font-size: 17px;
-    min-height: 100vh;
-    min-height: 100dvh;
-    height: var(--app-h);
     display: flex;
     flex-direction: column;
-    overflow: hidden;
     -webkit-text-size-adjust: 100%;
     -webkit-font-smoothing: antialiased;
+    touch-action: manipulation;
   }
 
   /* ═══ TELA DE BOAS-VINDAS ═══ */
@@ -50,8 +59,7 @@
     align-items: center;
     justify-content: center;
     width: 100%;
-    height: var(--app-h);
-    max-height: var(--app-h);
+    height: 100%;
     padding: clamp(12px, 3vh, 28px) 20px;
     padding-top: max(clamp(12px, 3vh, 28px), env(safe-area-inset-top));
     padding-bottom: max(clamp(12px, 3vh, 28px), env(safe-area-inset-bottom));
@@ -217,9 +225,7 @@
     display: none;
     flex-direction: column;
     width: 100%;
-    min-height: 100vh;
-    min-height: 100dvh;
-    height: var(--app-h);
+    height: 100%;
   }
 
   .chat-header {
@@ -538,7 +544,7 @@
 <div id="tela-boas-vindas">
   <div class="logo-container">
     <div class="logo-circulo">
-      <img src="avatar.png?v=3" alt="Debatedor" decoding="async">
+      <img src="avatar.png?v=4" alt="Debatedor" decoding="async">
     </div>
     <div class="badge-online"></div>
   </div>
@@ -576,7 +582,7 @@
 
   <div class="chat-header">
     <div class="avatar-header">
-      <img src="avatar.png?v=3" alt="" decoding="async">
+      <img src="avatar.png?v=4" alt="" decoding="async">
       <div class="avatar-dot"></div>
     </div>
     <div class="header-info">
@@ -602,7 +608,7 @@
 
   <div class="typing-indicator" id="typing">
     <div class="msg-avatar bot-av">
-      <img src="avatar.png?v=3" alt="" decoding="async">
+      <img src="avatar.png?v=4" alt="" decoding="async">
     </div>
     <div class="typing-dots">
       <span></span><span></span><span></span>
@@ -634,20 +640,6 @@ var BACKEND_URL = 'https://mnlszntcfbjdkjrfzinl.supabase.co/functions/v1/patriot
 var nomeUsuario = '';
 var inicialUsuario = '';
 var historico = [];
-
-// ═══ FIX DE ALTURA PARA WEBVIEW NATIVA (iOS/Android in-app) ═══
-// Alguns WebViews não entendem 100dvh e/ou reportam 0 antes de estabilizar.
-function ajustarAlturaApp() {
-  var h = window.innerHeight;
-  if (h && h > 0) {
-    document.documentElement.style.setProperty('--app-h', h + 'px');
-  }
-}
-ajustarAlturaApp();
-window.addEventListener('resize', ajustarAlturaApp);
-window.addEventListener('orientationchange', function () {
-  setTimeout(ajustarAlturaApp, 200);
-});
 
 // ═══ ENTRADA NO CHAT ═══
 function entrarNoChat() {
@@ -744,7 +736,7 @@ function adicionarMensagem(tipo, texto) {
   avatar.className = 'msg-avatar ' + (tipo === 'bot' ? 'bot-av' : 'user-av');
   if (tipo === 'bot') {
     var img = document.createElement('img');
-    img.src = 'avatar.png?v=3';
+    img.src = 'avatar.png?v=4';
     img.alt = '';
     img.decoding = 'async';
     avatar.appendChild(img);
