@@ -60,16 +60,15 @@
     justify-content: center;
     width: 100%;
     height: 100%;
-    padding: clamp(12px, 3vh, 28px) 20px;
-    padding-top: max(clamp(12px, 3vh, 28px), env(safe-area-inset-top));
-    padding-bottom: max(clamp(12px, 3vh, 28px), env(safe-area-inset-bottom));
+    padding: clamp(8px, 2vh, 20px) 20px;
+    padding-top: max(clamp(8px, 2vh, 20px), env(safe-area-inset-top));
+    padding-bottom: max(clamp(8px, 2vh, 20px), env(safe-area-inset-bottom));
     background: radial-gradient(ellipse at 50% 0%, #002776aa 0%, transparent 60%),
                 radial-gradient(ellipse at 80% 100%, #009c3b44 0%, transparent 50%),
                 var(--cinza-escuro);
     text-align: center;
     gap: 0;
-    overflow-y: auto;
-    -webkit-overflow-scrolling: touch;
+    overflow: hidden;
   }
 
   .logo-container {
@@ -226,6 +225,7 @@
     flex-direction: column;
     width: 100%;
     height: 100%;
+    overflow: hidden;
   }
 
   .chat-header {
@@ -544,7 +544,7 @@
 <div id="tela-boas-vindas">
   <div class="logo-container">
     <div class="logo-circulo">
-      <img src="avatar.png?v=4" alt="Debatedor" decoding="async">
+      <img src="avatar.png?v=5" alt="Debatedor" decoding="async">
     </div>
     <div class="badge-online"></div>
   </div>
@@ -582,7 +582,7 @@
 
   <div class="chat-header">
     <div class="avatar-header">
-      <img src="avatar.png?v=4" alt="" decoding="async">
+      <img src="avatar.png?v=5" alt="" decoding="async">
       <div class="avatar-dot"></div>
     </div>
     <div class="header-info">
@@ -608,7 +608,7 @@
 
   <div class="typing-indicator" id="typing">
     <div class="msg-avatar bot-av">
-      <img src="avatar.png?v=4" alt="" decoding="async">
+      <img src="avatar.png?v=5" alt="" decoding="async">
     </div>
     <div class="typing-dots">
       <span></span><span></span><span></span>
@@ -640,6 +640,33 @@ var BACKEND_URL = 'https://mnlszntcfbjdkjrfzinl.supabase.co/functions/v1/patriot
 var nomeUsuario = '';
 var inicialUsuario = '';
 var historico = [];
+
+// ═══ TRAVA DE ALTURA — força as telas a ocupar EXATAMENTE a área visível ═══
+// Alguns WebViews nativos reportam viewport maior que a tela, causando scroll fantasma.
+function travarAltura() {
+  var h = 0;
+  if (window.visualViewport && window.visualViewport.height) {
+    h = window.visualViewport.height;
+  } else {
+    h = document.documentElement.clientHeight || window.innerHeight || 0;
+  }
+  if (!h) return;
+  var px = h + 'px';
+  document.documentElement.style.height = px;
+  document.body.style.height = px;
+  var bv = document.getElementById('tela-boas-vindas');
+  var tc = document.getElementById('tela-chat');
+  if (bv) { bv.style.height = px; bv.style.maxHeight = px; }
+  if (tc) { tc.style.height = px; tc.style.maxHeight = px; }
+}
+travarAltura();
+window.addEventListener('load', travarAltura);
+window.addEventListener('resize', travarAltura);
+window.addEventListener('orientationchange', function () { setTimeout(travarAltura, 250); });
+if (window.visualViewport) {
+  window.visualViewport.addEventListener('resize', travarAltura);
+  window.visualViewport.addEventListener('scroll', travarAltura);
+}
 
 // ═══ ENTRADA NO CHAT ═══
 function entrarNoChat() {
@@ -736,7 +763,7 @@ function adicionarMensagem(tipo, texto) {
   avatar.className = 'msg-avatar ' + (tipo === 'bot' ? 'bot-av' : 'user-av');
   if (tipo === 'bot') {
     var img = document.createElement('img');
-    img.src = 'avatar.png?v=4';
+    img.src = 'avatar.png?v=5';
     img.alt = '';
     img.decoding = 'async';
     avatar.appendChild(img);
