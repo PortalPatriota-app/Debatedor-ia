@@ -52,6 +52,10 @@
     touch-action: manipulation;
   }
 
+  /* Quando o teclado abre, empurra o conteúdo pra cima pra revelar o input */
+  body.teclado-aberto #tela-boas-vindas { justify-content: flex-start; padding-top: 20px; }
+  body.teclado-aberto #tela-chat { padding-bottom: 280px; }
+
   /* ═══ TELA DE BOAS-VINDAS ═══ */
   #tela-boas-vindas {
     display: flex;
@@ -539,7 +543,7 @@
 </style>
 </head>
 <body>
-<div id="debug-versao" style="position:fixed;top:4px;right:6px;z-index:9999;background:#000;color:#0f0;font:11px monospace;padding:2px 6px;border-radius:4px;pointer-events:none;">v10</div>
+<div id="debug-versao" style="position:fixed;top:4px;right:6px;z-index:9999;background:#000;color:#0f0;font:11px monospace;padding:2px 6px;border-radius:4px;pointer-events:none;">v11</div>
 
 <!-- ═══ TELA DE BOAS-VINDAS ═══ -->
 <div id="tela-boas-vindas">
@@ -642,60 +646,48 @@ var nomeUsuario = '';
 var inicialUsuario = '';
 var historico = [];
 
-// ═══ FIX ALTURA PARA WEBVIEW BUGADO ═══
-// visualViewport.height é a fonte mais confiável (reflete a área visível real,
-// já descontando teclado). Se não existir, cai para innerHeight/clientHeight.
-var _ultimaH = 0;
-function ajustar() {
-  var h = 0;
-  if (window.visualViewport && window.visualViewport.height) {
-    h = window.visualViewport.height;
-  } else {
+// ═══ FIX ALTURA PARA WEBVIEW BUGADO ═══ (versão v9 — a que funcionou)
+(function () {
+  function ajustar() {
     var candidatos = [];
+    if (window.visualViewport && window.visualViewport.height) candidatos.push(window.visualViewport.height);
     if (window.innerHeight) candidatos.push(window.innerHeight);
     if (document.documentElement && document.documentElement.clientHeight) candidatos.push(document.documentElement.clientHeight);
     if (window.screen && window.screen.availHeight) candidatos.push(window.screen.availHeight);
     if (!candidatos.length) return;
-    h = Math.min.apply(null, candidatos);
+    var h = Math.round(Math.min.apply(null, candidatos));
+    if (h < 200) return;
+    var px = h + 'px';
+    document.documentElement.style.height = px;
+    document.documentElement.style.maxHeight = px;
+    document.body.style.height = px;
+    document.body.style.maxHeight = px;
+    var bv = document.getElementById('tela-boas-vindas');
+    var tc = document.getElementById('tela-chat');
+    if (bv) { bv.style.height = px; bv.style.maxHeight = px; }
+    if (tc) { tc.style.height = px; tc.style.maxHeight = px; }
   }
-  h = Math.round(h);
-  if (h < 200) return;
-  // Anti-vibração: só aplica se a mudança for >= 8px (evita loop em micro-mudanças).
-  if (Math.abs(h - _ultimaH) < 8) return;
-  _ultimaH = h;
-  var px = h + 'px';
-  document.documentElement.style.height = px;
-  document.documentElement.style.maxHeight = px;
-  document.body.style.height = px;
-  document.body.style.maxHeight = px;
-  var bv = document.getElementById('tela-boas-vindas');
-  var tc = document.getElementById('tela-chat');
-  if (bv) { bv.style.height = px; bv.style.maxHeight = px; }
-  if (tc) { tc.style.height = px; tc.style.maxHeight = px; }
-}
-ajustar();
-window.addEventListener('orientationchange', function () { setTimeout(ajustar, 400); });
-// Reage a abertura/fechamento de teclado (visualViewport.resize dispara nisso).
-if (window.visualViewport) {
-  window.visualViewport.addEventListener('resize', ajustar);
-}
-// Quando o input de nome recebe foco, garante que ele fique visível acima do teclado.
+  ajustar();
+  window.addEventListener('orientationchange', function () { setTimeout(ajustar, 400); });
+})();
+
+// ═══ TECLADO — quando abrir, adiciona uma "gaveta" que empurra o input pra cima ═══
 document.addEventListener('DOMContentLoaded', function () {
-  var inp = document.getElementById('input-nome-usuario');
-  if (inp) {
-    inp.addEventListener('focus', function () {
+  function handleFocus(inputEl) {
+    inputEl.addEventListener('focus', function () {
+      document.body.classList.add('teclado-aberto');
       setTimeout(function () {
-        ajustar();
-        try { inp.scrollIntoView({ block: 'center', behavior: 'smooth' }); } catch (_) {}
-      }, 350);
+        try { inputEl.scrollIntoView({ block: 'center', behavior: 'smooth' }); } catch (_) {}
+      }, 300);
+    });
+    inputEl.addEventListener('blur', function () {
+      document.body.classList.remove('teclado-aberto');
     });
   }
+  var inp = document.getElementById('input-nome-usuario');
+  if (inp) handleFocus(inp);
   var chatInp = document.getElementById('chat-input');
-  if (chatInp) {
-    chatInp.addEventListener('focus', function () {
-      setTimeout(ajustar, 350);
-    });
-  }
+  if (chatInp) handleFocus(chatInp);
 });
 
 // ═══ BLOQUEAR SCROLL NATIVO DO WEBVIEW (o "void branco" fora do body) ═══
