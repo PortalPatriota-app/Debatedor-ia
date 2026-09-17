@@ -68,8 +68,7 @@
                 var(--cinza-escuro);
     text-align: center;
     gap: 0;
-    overflow-y: auto;
-    -webkit-overflow-scrolling: touch;
+    overflow: hidden;
   }
 
   .logo-container {
@@ -540,7 +539,7 @@
 </style>
 </head>
 <body>
-<div id="debug-versao" style="position:fixed;top:4px;right:6px;z-index:9999;background:#000;color:#0f0;font:11px monospace;padding:2px 6px;border-radius:4px;pointer-events:none;">v8</div>
+<div id="debug-versao" style="position:fixed;top:4px;right:6px;z-index:9999;background:#000;color:#0f0;font:11px monospace;padding:2px 6px;border-radius:4px;pointer-events:none;">v9</div>
 
 <!-- ═══ TELA DE BOAS-VINDAS ═══ -->
 <div id="tela-boas-vindas">
@@ -644,32 +643,46 @@ var inicialUsuario = '';
 var historico = [];
 
 // ═══ FIX ALTURA PARA WEBVIEW BUGADO ═══
-// Alguns WebViews nativos reportam a altura da PÁGINA como se fosse a do viewport,
-// deixando o layout maior que a tela. Aqui pegamos o MENOR valor entre várias fontes
-// (a "área realmente visível") e travamos as telas com esse valor em pixels.
-// Sem listeners de scroll → não pode tremer.
+// Pegamos o MENOR valor entre fontes de área visível (sem screen.height, que
+// inclui barras do sistema e infla o resultado).
 (function () {
   function ajustar() {
     var candidatos = [];
     if (window.visualViewport && window.visualViewport.height) candidatos.push(window.visualViewport.height);
     if (window.innerHeight) candidatos.push(window.innerHeight);
     if (document.documentElement && document.documentElement.clientHeight) candidatos.push(document.documentElement.clientHeight);
-    if (window.screen && window.screen.height) candidatos.push(window.screen.height);
+    if (window.screen && window.screen.availHeight) candidatos.push(window.screen.availHeight);
     if (!candidatos.length) return;
     var h = Math.round(Math.min.apply(null, candidatos));
     if (h < 200) return;
     var px = h + 'px';
     document.documentElement.style.height = px;
+    document.documentElement.style.maxHeight = px;
     document.body.style.height = px;
+    document.body.style.maxHeight = px;
     var bv = document.getElementById('tela-boas-vindas');
     var tc = document.getElementById('tela-chat');
-    if (bv) bv.style.height = px;
-    if (tc) tc.style.height = px;
+    if (bv) { bv.style.height = px; bv.style.maxHeight = px; }
+    if (tc) { tc.style.height = px; tc.style.maxHeight = px; }
   }
   ajustar();
-  // Recalcula só em virada de tela (rotação). Sem listener de scroll/resize/keyboard.
   window.addEventListener('orientationchange', function () { setTimeout(ajustar, 400); });
 })();
+
+// ═══ BLOQUEAR SCROLL NATIVO DO WEBVIEW (o "void branco" fora do body) ═══
+// Só permite scroll dentro de elementos que realmente têm conteúdo para rolar.
+document.addEventListener('touchmove', function (e) {
+  var el = e.target;
+  while (el && el !== document.body && el !== document.documentElement) {
+    var s;
+    try { s = getComputedStyle(el); } catch (_) { s = null; }
+    if (s && (s.overflowY === 'auto' || s.overflowY === 'scroll') && el.scrollHeight > el.clientHeight) {
+      return; // deixa rolar dentro desse elemento
+    }
+    el = el.parentElement;
+  }
+  e.preventDefault();
+}, { passive: false });
 
 // ═══ ENTRADA NO CHAT ═══
 function entrarNoChat() {
