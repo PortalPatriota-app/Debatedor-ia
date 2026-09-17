@@ -539,6 +539,7 @@
 </style>
 </head>
 <body>
+<div id="debug-versao" style="position:fixed;top:4px;right:6px;z-index:9999;background:#000;color:#0f0;font:11px monospace;padding:2px 6px;border-radius:4px;pointer-events:none;">v6</div>
 
 <!-- ═══ TELA DE BOAS-VINDAS ═══ -->
 <div id="tela-boas-vindas">
@@ -642,15 +643,20 @@ var inicialUsuario = '';
 var historico = [];
 
 // ═══ TRAVA DE ALTURA — força as telas a ocupar EXATAMENTE a área visível ═══
-// Alguns WebViews nativos reportam viewport maior que a tela, causando scroll fantasma.
-function travarAltura() {
+var _ultimaAltura = 0;
+var _agendado = false;
+function _aplicarAltura() {
+  _agendado = false;
   var h = 0;
   if (window.visualViewport && window.visualViewport.height) {
-    h = window.visualViewport.height;
+    h = Math.round(window.visualViewport.height);
   } else {
     h = document.documentElement.clientHeight || window.innerHeight || 0;
   }
   if (!h) return;
+  // Ignora mudanças minúsculas para evitar vibração em loop.
+  if (Math.abs(h - _ultimaAltura) < 4) return;
+  _ultimaAltura = h;
   var px = h + 'px';
   document.documentElement.style.height = px;
   document.body.style.height = px;
@@ -659,13 +665,18 @@ function travarAltura() {
   if (bv) { bv.style.height = px; bv.style.maxHeight = px; }
   if (tc) { tc.style.height = px; tc.style.maxHeight = px; }
 }
+function travarAltura() {
+  if (_agendado) return;
+  _agendado = true;
+  (window.requestAnimationFrame || function (f) { setTimeout(f, 16); })(_aplicarAltura);
+}
 travarAltura();
 window.addEventListener('load', travarAltura);
 window.addEventListener('resize', travarAltura);
-window.addEventListener('orientationchange', function () { setTimeout(travarAltura, 250); });
+window.addEventListener('orientationchange', function () { setTimeout(travarAltura, 300); });
 if (window.visualViewport) {
   window.visualViewport.addEventListener('resize', travarAltura);
-  window.visualViewport.addEventListener('scroll', travarAltura);
+  // NÃO escutar 'scroll' — cria loop de vibração em alguns WebViews.
 }
 
 // ═══ ENTRADA NO CHAT ═══
