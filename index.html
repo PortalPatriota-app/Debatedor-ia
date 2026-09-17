@@ -540,7 +540,7 @@
 </style>
 </head>
 <body>
-<div id="debug-versao" style="position:fixed;top:4px;right:6px;z-index:9999;background:#000;color:#0f0;font:11px monospace;padding:2px 6px;border-radius:4px;pointer-events:none;">v7</div>
+<div id="debug-versao" style="position:fixed;top:4px;right:6px;z-index:9999;background:#000;color:#0f0;font:11px monospace;padding:2px 6px;border-radius:4px;pointer-events:none;">v8</div>
 
 <!-- ═══ TELA DE BOAS-VINDAS ═══ -->
 <div id="tela-boas-vindas">
@@ -642,6 +642,34 @@ var BACKEND_URL = 'https://mnlszntcfbjdkjrfzinl.supabase.co/functions/v1/patriot
 var nomeUsuario = '';
 var inicialUsuario = '';
 var historico = [];
+
+// ═══ FIX ALTURA PARA WEBVIEW BUGADO ═══
+// Alguns WebViews nativos reportam a altura da PÁGINA como se fosse a do viewport,
+// deixando o layout maior que a tela. Aqui pegamos o MENOR valor entre várias fontes
+// (a "área realmente visível") e travamos as telas com esse valor em pixels.
+// Sem listeners de scroll → não pode tremer.
+(function () {
+  function ajustar() {
+    var candidatos = [];
+    if (window.visualViewport && window.visualViewport.height) candidatos.push(window.visualViewport.height);
+    if (window.innerHeight) candidatos.push(window.innerHeight);
+    if (document.documentElement && document.documentElement.clientHeight) candidatos.push(document.documentElement.clientHeight);
+    if (window.screen && window.screen.height) candidatos.push(window.screen.height);
+    if (!candidatos.length) return;
+    var h = Math.round(Math.min.apply(null, candidatos));
+    if (h < 200) return;
+    var px = h + 'px';
+    document.documentElement.style.height = px;
+    document.body.style.height = px;
+    var bv = document.getElementById('tela-boas-vindas');
+    var tc = document.getElementById('tela-chat');
+    if (bv) bv.style.height = px;
+    if (tc) tc.style.height = px;
+  }
+  ajustar();
+  // Recalcula só em virada de tela (rotação). Sem listener de scroll/resize/keyboard.
+  window.addEventListener('orientationchange', function () { setTimeout(ajustar, 400); });
+})();
 
 // ═══ ENTRADA NO CHAT ═══
 function entrarNoChat() {
