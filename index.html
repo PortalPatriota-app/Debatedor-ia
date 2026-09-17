@@ -539,7 +539,7 @@
 </style>
 </head>
 <body>
-<div id="debug-versao" style="position:fixed;top:4px;right:6px;z-index:9999;background:#000;color:#0f0;font:11px monospace;padding:2px 6px;border-radius:4px;pointer-events:none;">v9</div>
+<div id="debug-versao" style="position:fixed;top:4px;right:6px;z-index:9999;background:#000;color:#0f0;font:11px monospace;padding:2px 6px;border-radius:4px;pointer-events:none;">v10</div>
 
 <!-- ═══ TELA DE BOAS-VINDAS ═══ -->
 <div id="tela-boas-vindas">
@@ -643,31 +643,60 @@ var inicialUsuario = '';
 var historico = [];
 
 // ═══ FIX ALTURA PARA WEBVIEW BUGADO ═══
-// Pegamos o MENOR valor entre fontes de área visível (sem screen.height, que
-// inclui barras do sistema e infla o resultado).
-(function () {
-  function ajustar() {
+// visualViewport.height é a fonte mais confiável (reflete a área visível real,
+// já descontando teclado). Se não existir, cai para innerHeight/clientHeight.
+var _ultimaH = 0;
+function ajustar() {
+  var h = 0;
+  if (window.visualViewport && window.visualViewport.height) {
+    h = window.visualViewport.height;
+  } else {
     var candidatos = [];
-    if (window.visualViewport && window.visualViewport.height) candidatos.push(window.visualViewport.height);
     if (window.innerHeight) candidatos.push(window.innerHeight);
     if (document.documentElement && document.documentElement.clientHeight) candidatos.push(document.documentElement.clientHeight);
     if (window.screen && window.screen.availHeight) candidatos.push(window.screen.availHeight);
     if (!candidatos.length) return;
-    var h = Math.round(Math.min.apply(null, candidatos));
-    if (h < 200) return;
-    var px = h + 'px';
-    document.documentElement.style.height = px;
-    document.documentElement.style.maxHeight = px;
-    document.body.style.height = px;
-    document.body.style.maxHeight = px;
-    var bv = document.getElementById('tela-boas-vindas');
-    var tc = document.getElementById('tela-chat');
-    if (bv) { bv.style.height = px; bv.style.maxHeight = px; }
-    if (tc) { tc.style.height = px; tc.style.maxHeight = px; }
+    h = Math.min.apply(null, candidatos);
   }
-  ajustar();
-  window.addEventListener('orientationchange', function () { setTimeout(ajustar, 400); });
-})();
+  h = Math.round(h);
+  if (h < 200) return;
+  // Anti-vibração: só aplica se a mudança for >= 8px (evita loop em micro-mudanças).
+  if (Math.abs(h - _ultimaH) < 8) return;
+  _ultimaH = h;
+  var px = h + 'px';
+  document.documentElement.style.height = px;
+  document.documentElement.style.maxHeight = px;
+  document.body.style.height = px;
+  document.body.style.maxHeight = px;
+  var bv = document.getElementById('tela-boas-vindas');
+  var tc = document.getElementById('tela-chat');
+  if (bv) { bv.style.height = px; bv.style.maxHeight = px; }
+  if (tc) { tc.style.height = px; tc.style.maxHeight = px; }
+}
+ajustar();
+window.addEventListener('orientationchange', function () { setTimeout(ajustar, 400); });
+// Reage a abertura/fechamento de teclado (visualViewport.resize dispara nisso).
+if (window.visualViewport) {
+  window.visualViewport.addEventListener('resize', ajustar);
+}
+// Quando o input de nome recebe foco, garante que ele fique visível acima do teclado.
+document.addEventListener('DOMContentLoaded', function () {
+  var inp = document.getElementById('input-nome-usuario');
+  if (inp) {
+    inp.addEventListener('focus', function () {
+      setTimeout(function () {
+        ajustar();
+        try { inp.scrollIntoView({ block: 'center', behavior: 'smooth' }); } catch (_) {}
+      }, 350);
+    });
+  }
+  var chatInp = document.getElementById('chat-input');
+  if (chatInp) {
+    chatInp.addEventListener('focus', function () {
+      setTimeout(ajustar, 350);
+    });
+  }
+});
 
 // ═══ BLOQUEAR SCROLL NATIVO DO WEBVIEW (o "void branco" fora do body) ═══
 // Só permite scroll dentro de elementos que realmente têm conteúdo para rolar.
