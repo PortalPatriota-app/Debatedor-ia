@@ -60,15 +60,16 @@
     justify-content: center;
     width: 100%;
     height: 100%;
-    padding: clamp(8px, 2vh, 20px) 20px;
-    padding-top: max(clamp(8px, 2vh, 20px), env(safe-area-inset-top));
-    padding-bottom: max(clamp(8px, 2vh, 20px), env(safe-area-inset-bottom));
+    padding: clamp(12px, 3vh, 28px) 20px;
+    padding-top: max(clamp(12px, 3vh, 28px), env(safe-area-inset-top));
+    padding-bottom: max(clamp(12px, 3vh, 28px), env(safe-area-inset-bottom));
     background: radial-gradient(ellipse at 50% 0%, #002776aa 0%, transparent 60%),
                 radial-gradient(ellipse at 80% 100%, #009c3b44 0%, transparent 50%),
                 var(--cinza-escuro);
     text-align: center;
     gap: 0;
-    overflow: hidden;
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
   }
 
   .logo-container {
@@ -539,7 +540,7 @@
 </style>
 </head>
 <body>
-<div id="debug-versao" style="position:fixed;top:4px;right:6px;z-index:9999;background:#000;color:#0f0;font:11px monospace;padding:2px 6px;border-radius:4px;pointer-events:none;">v6</div>
+<div id="debug-versao" style="position:fixed;top:4px;right:6px;z-index:9999;background:#000;color:#0f0;font:11px monospace;padding:2px 6px;border-radius:4px;pointer-events:none;">v7</div>
 
 <!-- ═══ TELA DE BOAS-VINDAS ═══ -->
 <div id="tela-boas-vindas">
@@ -641,43 +642,6 @@ var BACKEND_URL = 'https://mnlszntcfbjdkjrfzinl.supabase.co/functions/v1/patriot
 var nomeUsuario = '';
 var inicialUsuario = '';
 var historico = [];
-
-// ═══ TRAVA DE ALTURA — força as telas a ocupar EXATAMENTE a área visível ═══
-var _ultimaAltura = 0;
-var _agendado = false;
-function _aplicarAltura() {
-  _agendado = false;
-  var h = 0;
-  if (window.visualViewport && window.visualViewport.height) {
-    h = Math.round(window.visualViewport.height);
-  } else {
-    h = document.documentElement.clientHeight || window.innerHeight || 0;
-  }
-  if (!h) return;
-  // Ignora mudanças minúsculas para evitar vibração em loop.
-  if (Math.abs(h - _ultimaAltura) < 4) return;
-  _ultimaAltura = h;
-  var px = h + 'px';
-  document.documentElement.style.height = px;
-  document.body.style.height = px;
-  var bv = document.getElementById('tela-boas-vindas');
-  var tc = document.getElementById('tela-chat');
-  if (bv) { bv.style.height = px; bv.style.maxHeight = px; }
-  if (tc) { tc.style.height = px; tc.style.maxHeight = px; }
-}
-function travarAltura() {
-  if (_agendado) return;
-  _agendado = true;
-  (window.requestAnimationFrame || function (f) { setTimeout(f, 16); })(_aplicarAltura);
-}
-travarAltura();
-window.addEventListener('load', travarAltura);
-window.addEventListener('resize', travarAltura);
-window.addEventListener('orientationchange', function () { setTimeout(travarAltura, 300); });
-if (window.visualViewport) {
-  window.visualViewport.addEventListener('resize', travarAltura);
-  // NÃO escutar 'scroll' — cria loop de vibração em alguns WebViews.
-}
 
 // ═══ ENTRADA NO CHAT ═══
 function entrarNoChat() {
