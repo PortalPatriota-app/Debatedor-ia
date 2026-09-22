@@ -555,7 +555,8 @@
 </style>
 </head>
 <body>
-<div id="debug-versao" style="position:fixed;top:4px;right:6px;z-index:9999;background:#000;color:#0f0;font:11px monospace;padding:2px 6px;border-radius:4px;pointer-events:none;">v14</div>
+<div id="debug-versao" style="position:fixed;top:4px;right:6px;z-index:99999;background:#000;color:#0f0;font:11px monospace;padding:4px 8px;border-radius:4px;cursor:pointer;" onclick="mostrarDebug()">v15 🔍</div>
+<div id="debug-log" style="position:fixed;top:0;left:0;right:0;background:#000;color:#0f0;font:10px monospace;padding:8px;z-index:99998;max-height:60%;overflow:auto;display:none;white-space:pre-wrap;"></div>
 
 <!-- ═══ TELA DE BOAS-VINDAS ═══ -->
 <div id="tela-boas-vindas">
@@ -657,6 +658,59 @@ var BACKEND_URL = 'https://mnlszntcfbjdkjrfzinl.supabase.co/functions/v1/patriot
 var nomeUsuario = '';
 var inicialUsuario = '';
 var historico = [];
+
+// ═══ DEBUG TOOLKIT — clique no marcador "v15 🔍" pra ver o log ═══
+var DEBUG_BUFFER = [];
+function dbg(tag, extra) {
+  var t = new Date().toISOString().substr(11, 12);
+  var m = document.getElementById('mensagens');
+  var chat = document.getElementById('tela-chat');
+  var body = document.body;
+  var vv = window.visualViewport;
+  var info = {
+    tag: tag,
+    t: t,
+    innerH: window.innerHeight,
+    docH: document.documentElement.clientHeight,
+    vvH: vv ? Math.round(vv.height) : null,
+    vvOff: vv ? Math.round(vv.offsetTop) : null,
+    scrY: window.scrollY,
+    bodyH: body.style.height || getComputedStyle(body).height,
+    chatH: chat ? (chat.style.height || getComputedStyle(chat).height) : null,
+    msgScrollT: m ? m.scrollTop : null,
+    msgScrollH: m ? m.scrollHeight : null,
+    msgClientH: m ? m.clientHeight : null,
+    docScrollT: document.documentElement.scrollTop,
+    docScrollH: document.documentElement.scrollHeight,
+    tecladoAberto: body.classList.contains('teclado-aberto')
+  };
+  if (extra) info.extra = extra;
+  DEBUG_BUFFER.push(info);
+  if (DEBUG_BUFFER.length > 60) DEBUG_BUFFER.shift();
+}
+function mostrarDebug() {
+  var el = document.getElementById('debug-log');
+  if (el.style.display === 'none') {
+    var linhas = DEBUG_BUFFER.map(function (e) {
+      return e.t + ' [' + e.tag + '] ' +
+        'inH=' + e.innerH + ' docH=' + e.docH + ' vvH=' + e.vvH + ' vvOff=' + e.vvOff +
+        ' scrY=' + e.scrY + ' bodyH=' + e.bodyH + ' chatH=' + e.chatH +
+        '\n  msg: scrT=' + e.msgScrollT + ' scrH=' + e.msgScrollH + ' cliH=' + e.msgClientH +
+        ' | doc: scrT=' + e.docScrollT + ' scrH=' + e.docScrollH +
+        (e.tecladoAberto ? ' [TEC]' : '') +
+        (e.extra ? '\n  >> ' + JSON.stringify(e.extra) : '');
+    }).join('\n');
+    el.textContent = 'TAP AQUI PRA FECHAR\n\n' + (linhas || '(vazio)');
+    el.style.display = 'block';
+    el.onclick = function () { el.style.display = 'none'; };
+  } else {
+    el.style.display = 'none';
+  }
+}
+window.addEventListener('error', function (e) {
+  dbg('JS_ERROR', { msg: e.message, src: e.filename, ln: e.lineno });
+});
+dbg('boot');
 
 // ═══ FIX ALTURA PARA WEBVIEW BUGADO ═══ (versão v9 — a que funcionou)
 (function () {
@@ -761,6 +815,8 @@ function enviarMensagem() {
   var texto = input.value.trim();
   if (!texto) return;
 
+  dbg('enviar:antes', { textoLen: texto.length });
+
   var btn = document.getElementById('btn-enviar');
   btn.disabled = true;
   input.value = '';
@@ -771,6 +827,8 @@ function enviarMensagem() {
 
   mostrarTyping(true);
   scrollParaBaixo();
+
+  dbg('enviar:fetch');
 
   fetch(BACKEND_URL, {
     method: 'POST',
@@ -786,11 +844,16 @@ function enviarMensagem() {
         (dados.content && dados.content[0] && dados.content[0].text) ||
         dados.text ||
         'Não consegui responder agora.';
+      dbg('resposta:recebida', { respLen: textoResposta.length });
       historico.push({ role: 'assistant', content: textoResposta });
       mostrarTyping(false);
+      dbg('resposta:antesInserir');
       adicionarMensagem('bot', textoResposta);
+      dbg('resposta:depoisInserir');
+      setTimeout(function () { dbg('resposta:apos200ms'); }, 200);
     })
-    .catch(function () {
+    .catch(function (err) {
+      dbg('resposta:erro', { msg: (err && err.message) || 'unknown' });
       mostrarTyping(false);
       adicionarErro('Erro ao conectar. Verifique sua conexão e tente novamente.');
       historico.pop();
@@ -798,6 +861,7 @@ function enviarMensagem() {
     .then(function () {
       btn.disabled = false;
       input.focus();
+      dbg('enviar:fim');
     });
 }
 
