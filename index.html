@@ -52,8 +52,11 @@
     touch-action: manipulation;
   }
 
-  /* Quando o teclado abre, encolhemos o container para que o layout recentralize
-     no espaço restante (o teclado ocupa ~50% da tela em celulares). */
+  /* Quando o teclado abre:
+     - Boas-vindas: encolhe para 50% (funcionou 100%)
+     - Chat: NÃO encolhe o container (isso causa a "tarja preta" quando a classe
+       fica grudada). Em vez disso, aumenta o padding-bottom para empurrar o input
+       acima do teclado. */
   body.teclado-aberto #tela-boas-vindas {
     height: 50% !important;
     max-height: 50% !important;
@@ -61,8 +64,7 @@
     padding-top: 12px !important;
   }
   body.teclado-aberto #tela-chat {
-    height: 50% !important;
-    max-height: 50% !important;
+    padding-bottom: 360px !important;
   }
 
   /* ═══ TELA DE BOAS-VINDAS ═══ */
@@ -555,7 +557,7 @@
 </style>
 </head>
 <body>
-<div id="debug-versao" style="position:fixed;top:4px;right:6px;z-index:99999;background:#000;color:#0f0;font:11px monospace;padding:4px 8px;border-radius:4px;cursor:pointer;" onclick="mostrarDebug()">v15 🔍</div>
+<div id="debug-versao" style="position:fixed;top:4px;right:6px;z-index:99999;background:#000;color:#0f0;font:11px monospace;padding:4px 8px;border-radius:4px;cursor:pointer;" onclick="mostrarDebug()">v16 🔍</div>
 <div id="debug-log" style="position:fixed;top:0;left:0;right:0;background:#000;color:#0f0;font:10px monospace;padding:8px;z-index:99998;max-height:60%;overflow:auto;display:none;white-space:pre-wrap;"></div>
 
 <!-- ═══ TELA DE BOAS-VINDAS ═══ -->
@@ -860,7 +862,10 @@ function enviarMensagem() {
     })
     .then(function () {
       btn.disabled = false;
-      input.focus();
+      // IMPORTANTE: NÃO refocar aqui. Se refocar, o teclado fica aberto, o blur
+      // nunca dispara, e a classe `teclado-aberto` fica grudada → "tarja preta".
+      try { input.blur(); } catch (_) {}
+      document.body.classList.remove('teclado-aberto');
       dbg('enviar:fim');
     });
 }
