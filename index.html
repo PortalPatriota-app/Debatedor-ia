@@ -63,8 +63,17 @@
     justify-content: flex-start !important;
     padding-top: 12px !important;
   }
+  /* Fallback universal (desktops, OS desconhecido) */
   body.teclado-aberto #tela-chat {
-    padding-bottom: 360px !important;
+    padding-bottom: 400px !important;
+  }
+  /* iOS (iPhone/iPad) — teclado + barra de sugestões ~440px */
+  body.so-ios.teclado-aberto #tela-chat {
+    padding-bottom: 440px !important;
+  }
+  /* Android — teclado em geral ~310px (Gboard/Samsung) */
+  body.so-android.teclado-aberto #tela-chat {
+    padding-bottom: 320px !important;
   }
 
   /* ═══ TELA DE BOAS-VINDAS ═══ */
@@ -557,14 +566,15 @@
 </style>
 </head>
 <body>
-<div id="debug-versao" style="position:fixed;top:4px;right:6px;z-index:99999;background:#000;color:#0f0;font:11px monospace;padding:4px 8px;border-radius:4px;cursor:pointer;" onclick="mostrarDebug()">v16 🔍</div>
+<div id="debug-versao" style="position:fixed;top:4px;right:6px;z-index:99999;background:#000;color:#0f0;font:11px monospace;padding:4px 8px;border-radius:4px;cursor:pointer;" onclick="mostrarDebug()">v19 🔍</div>
 <div id="debug-log" style="position:fixed;top:0;left:0;right:0;background:#000;color:#0f0;font:10px monospace;padding:8px;z-index:99998;max-height:60%;overflow:auto;display:none;white-space:pre-wrap;"></div>
 
 <!-- ═══ TELA DE BOAS-VINDAS ═══ -->
 <div id="tela-boas-vindas">
   <div class="logo-container">
     <div class="logo-circulo">
-      <img src="avatar.png?v=5" alt="Debatedor" decoding="async">
+      <img src="avatar.png?v=5" alt="Debatedor" decoding="async"
+           onerror="this.parentNode.textContent='🦅';">
     </div>
     <div class="badge-online"></div>
   </div>
@@ -602,7 +612,8 @@
 
   <div class="chat-header">
     <div class="avatar-header">
-      <img src="avatar.png?v=5" alt="" decoding="async">
+      <img src="avatar.png?v=5" alt="" decoding="async"
+           onerror="this.outerHTML='🦅';">
       <div class="avatar-dot"></div>
     </div>
     <div class="header-info">
@@ -628,7 +639,8 @@
 
   <div class="typing-indicator" id="typing">
     <div class="msg-avatar bot-av">
-      <img src="avatar.png?v=5" alt="" decoding="async">
+      <img src="avatar.png?v=5" alt="" decoding="async"
+           onerror="this.parentNode.textContent='🦅';">
     </div>
     <div class="typing-dots">
       <span></span><span></span><span></span>
@@ -660,6 +672,16 @@ var BACKEND_URL = 'https://mnlszntcfbjdkjrfzinl.supabase.co/functions/v1/patriot
 var nomeUsuario = '';
 var inicialUsuario = '';
 var historico = [];
+
+// ═══ DETECÇÃO DE SO (para calibrar o padding do teclado) ═══
+(function () {
+  var ua = (navigator.userAgent || '') + ' ' + (navigator.platform || '');
+  var isIOS = /iPad|iPhone|iPod/.test(ua) ||
+    (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1); // iPadOS 13+
+  var isAndroid = /Android/i.test(ua);
+  if (isIOS) document.body.classList.add('so-ios');
+  else if (isAndroid) document.body.classList.add('so-android');
+})();
 
 // ═══ DEBUG TOOLKIT — clique no marcador "v15 🔍" pra ver o log ═══
 var DEBUG_BUFFER = [];
@@ -884,6 +906,7 @@ function adicionarMensagem(tipo, texto) {
     img.src = 'avatar.png?v=5';
     img.alt = '';
     img.decoding = 'async';
+    img.onerror = function () { avatar.textContent = '🦅'; };
     avatar.appendChild(img);
   } else {
     avatar.textContent = inicialUsuario;
